@@ -1,21 +1,18 @@
-version: '3.8'
-
 services:
   sandbox:
     build:
       context: .
       dockerfile: Dockerfile
       target: devx
-    container_name: devx-sandbox
     hostname: devx
     volumes:
       - devx_workspace:/devx
     ports:
-      - "127.0.0.1:2222:22"
+      - "127.0.0.1:${DEVX_SSH_PORT:-2222}:22"
     restart: unless-stopped
     environment:
       - UV_PYTHON_INSTALL_DIR=/opt/python
+      # Optional service environment should be merged from additional compose files.
 
 volumes:
   devx_workspace:
-    name: devx_workspace

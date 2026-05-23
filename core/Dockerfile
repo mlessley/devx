@@ -25,6 +25,41 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # 4. Install Python Runtimes via uv
 RUN uv python install 3.11 3.12
 
+# 5. Optional Toolchain Installs
+ARG INSTALL_JAVA=false
+ARG INSTALL_NODE=false
+ARG INSTALL_DOTNET=false
+
+# Install Java if requested
+RUN if [ "$INSTALL_JAVA" = "true" ]; then \
+    apt-get update && apt-get install -y --no-install-recommends \
+    openjdk-11-jdk \
+    maven \
+    gradle \
+    && rm -rf /var/lib/apt/lists/*; \
+    fi
+
+# Install Node.js/npm if requested
+RUN if [ "$INSTALL_NODE" = "true" ]; then \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g yarn pnpm && \
+    rm -rf /var/lib/apt/lists/*; \
+    fi
+
+# Install .NET SDK if requested
+RUN if [ "$INSTALL_DOTNET" = "true" ]; then \
+    curl -O https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
+    rm packages-microsoft-prod.deb && \
+    apt-get update && apt-get install -y dotnet-sdk-8.0 && \
+    rm -rf /var/lib/apt/lists/*; \
+    fi
+
+# [LEARN] We removed the pre-installed AI libraries from the base image.
+# Instead, projects inside /devx/repos will use 'uv' to manage their own dependencies.
+# This keeps our base image lean and our projects isolated.
+
 # 5. Configure SSH (Key-auth + Password fallback)
 RUN mkdir -p /var/run/sshd \
     && sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config \
@@ -48,9 +83,6 @@ RUN touch /var/log/devx_adhoc_history && chmod 666 /var/log/devx_adhoc_history
 COPY repo_watcher.py /usr/local/bin/repo_watcher.py
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/repo_watcher.py /usr/local/bin/entrypoint.sh
-
-# 8. Setup root's environment (devx is handled by entrypoint)
-RUN echo "uv run /usr/local/bin/repo_watcher.py" >> /root/.bashrc
 
 RUN mkdir -p /devx
 EXPOSE 22

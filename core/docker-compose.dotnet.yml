@@ -1,0 +1,5 @@
+services:
+  sandbox:
+    build:
+      args:
+        INSTALL_DOTNET: true

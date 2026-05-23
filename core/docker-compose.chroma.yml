@@ -1,0 +1,15 @@
+services:
+  sandbox:
+    environment:
+      - CHROMA_HOST=chroma
+
+  chroma:
+    image: chromadb/chroma:latest
+    volumes:
+      - chroma_data:/chroma/persist
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+volumes:
+  chroma_data:
