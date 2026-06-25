@@ -7,7 +7,8 @@ DevX 2.0 is a high-performance sandbox and bootstrap layer for workspace workflo
 DevX currently provides:
 - A persistent sandbox container with SSH access
 - A cross-platform CLI entry point (`./devx` and `devx.bat`)
-- Optional stack overlays for sandbox toolchains (`java`, `node`, `dotnet`)
+- Claude Code preinstalled in the base sandbox (Node.js 22 LTS)
+- Optional stack overlays for sandbox toolchains (`java`, `dotnet`)
 - Optional sidecar services (`postgres`, `chroma`)
 - Multi-instance startup support through instance and port flags
 
@@ -16,6 +17,7 @@ DevX currently provides:
 - **Bootstrap Layer**: A cross-platform entry point (`./devx`) that starts and manages a persistent sandbox from Windows (via WSL), macOS, or Linux.
 - **Volume-Native Performance**: All project data and user settings live in named Docker volumes (ext4), bypassing slow host-to-container file system overhead for maximum I/O performance.
 - **Pure UV Runtimes**: Powered by `uv`, providing lightning-fast Python runtime management (3.11, 3.12, ...) and dependency resolution.
+- **Built-in Claude Code**: The base sandbox includes `claude` out of the box, with updates pinned to image rebuilds (`DISABLE_AUTOUPDATER=true`).
 - **Automated Connectivity**: Automatically configures the host SSH client to connect to the sandbox with a single command: `ssh devx`.
 
 ## Architecture
@@ -44,6 +46,7 @@ DevX currently provides:
 - **Check Status**: `./devx status`
 - **Stop**: `./devx down`
 - **Connect**: `ssh devx` (or use VS Code Remote-SSH to connect to the `devx` host).
+- **Run Claude Code**: `claude` (one-time OAuth login persists because `/devx` is a named volume).
 
 ### Optional stacks
 DevX supports optional compose overlays so toolchains or sidecar services can be added when needed for a particular repo or experiment.
@@ -71,7 +74,7 @@ Pass stack names directly:
   ```
 - Start sandbox with multiple optional services:
   ```bash
-  ./devx up chroma postgres java node
+  ./devx up chroma postgres java
   ```
 
 If you prefer, the same stack names can be passed to `status` and `down` as well:
@@ -82,13 +85,13 @@ If you prefer, the same stack names can be passed to `status` and `down` as well
 ### Multi-instance usage
 Use instance and port flags when running more than one sandbox at the same time.
 
-- Start a second sandbox instance with Node:
+- Start a second sandbox instance:
   ```bash
-  ./devx up -i devx2 -p 2223 node
+  ./devx up -i devx2 -p 2223
   ```
-- Start a second sandbox instance with Node + Postgres:
+- Start a second sandbox instance with Java + Postgres:
   ```bash
-  ./devx up -i devx2 -p 2223 --postgres-port 5433 node postgres
+  ./devx up -i devx2 -p 2223 --postgres-port 5433 java postgres
   ```
 - Check status for a specific instance:
   ```bash
