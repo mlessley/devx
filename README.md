@@ -9,7 +9,7 @@ DevX currently provides:
 - A cross-platform CLI entry point (`./devx` and `devx.bat`)
 - Claude Code preinstalled in the base sandbox (Node.js 22 LTS)
 - Optional stack overlays for sandbox toolchains (`java`, `dotnet`)
-- Optional sidecar services (`postgres`, `chroma`)
+- Optional service overlays (`postgres`, `chroma`, `ztp`)
 - Multi-instance startup support through instance and port flags
 
 ## Key Features
@@ -49,12 +49,12 @@ DevX currently provides:
 - **Run Claude Code**: `claude` (one-time OAuth login persists because `/devx` is a named volume).
 
 ### Optional stacks
-DevX supports optional compose overlays so toolchains or sidecar services can be added when needed for a particular repo or experiment.
+DevX supports optional compose overlays so toolchains and service overlays can be added when needed for a particular repo or experiment.
 
 #### Interactive mode
 Run `./devx up` without arguments to launch an interactive menu that lets you select:
 - Sandbox toolchains (Java, Node, .NET — added to your dev container)
-- Supporting services (Postgres, Chroma — run as separate containers)
+- Service overlays (Postgres sidecar, Chroma sidecar, ZTP stack — run as separate containers)
 
 The menu uses a modern checkbox interface (installs `inquirer` automatically using `uv`).
 
@@ -72,6 +72,10 @@ Pass stack names directly:
   ```bash
   ./devx up java
   ```
+- Start sandbox + ZTP stack (Temporal + Nautobot 2.x):
+  ```bash
+  ./devx up ztp
+  ```
 - Start sandbox with multiple optional services:
   ```bash
   ./devx up chroma postgres java
@@ -81,6 +85,19 @@ If you prefer, the same stack names can be passed to `status` and `down` as well
 
 - `./devx status postgres`
 - `./devx down chroma java`
+
+#### ZTP stack integration points
+The `ztp` stack is intended to work with external/shared observability and includes:
+- Export-ready service endpoints:
+  - Temporal gRPC/UI: `127.0.0.1:7233` / `127.0.0.1:8233`
+  - Nautobot v2.4.21: `127.0.0.1:8889` (override with `DEVX_NAUTOBOT_PORT`)
+- Preconfigured sandbox env for Temporal clients:
+  - `TEMPORAL_ADDRESS=temporal:7233`
+  - `TEMPORAL_CLI_ADDRESS=temporal:7233`
+- Optional OTLP env hook (`OTEL_EXPORTER_OTLP_ENDPOINT`) for push-based telemetry
+- Discovery labels (`devx.metrics.*`) so an external Prometheus harness can discover scrape targets
+
+The stack does not include Prometheus or Grafana. Keep scrape and dashboard configuration in your external observability deployment.
 
 ### Multi-instance usage
 Use instance and port flags when running more than one sandbox at the same time.
