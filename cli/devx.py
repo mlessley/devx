@@ -434,7 +434,6 @@ def interactive_select():
                 "message": "Select sandbox toolchains (add languages/runtimes to your dev container):",
                 "choices": [
                     {"name": "Java (OpenJDK 11 + Maven/Gradle)", "value": "java"},
-                    {"name": "Node.js (v20 + npm/yarn/pnpm)", "value": "node"},
                     {"name": ".NET (SDK 8.0)", "value": "dotnet"},
                 ],
             },
@@ -466,7 +465,7 @@ def interactive_select():
         print(
             "\nSelect sandbox toolchains (these add languages/runtimes to your dev container):"
         )
-        toolchains = ["java", "node", "dotnet"]
+        toolchains = ["java", "dotnet"]
         selected_toolchains = []
         for tc in toolchains:
             response = input(f"Include {tc}? (y/n): ").strip().lower()
@@ -493,18 +492,17 @@ def interactive_select():
 def print_stack_help():
     """Print available optional stacks and usage examples."""
     print("Available optional stacks:")
-    print("  Toolchains (inside sandbox): java, node, dotnet")
+    print("  Toolchains (inside sandbox): java, dotnet")
     print("  Services (sidecars): postgres, chroma")
     print("")
     print("Examples:")
     print("  ./devx up")
-    print("  ./devx up node")
     print("  ./devx up postgres chroma")
-    print("  ./devx up node postgres")
-    print("  ./devx up -i devx2 -p 2223 node chroma")
-    print("  ./devx up -i devx2 -p 2223 --postgres-port 5433 node postgres")
-    print("  ./devx status node postgres")
-    print("  ./devx down node postgres")
+    print("  ./devx up java postgres")
+    print("  ./devx up -i devx2 -p 2223 java chroma")
+    print("  ./devx up -i devx2 -p 2223 --postgres-port 5433 java postgres")
+    print("  ./devx status java postgres")
+    print("  ./devx down java postgres")
 
 
 def main():
@@ -512,7 +510,7 @@ def main():
         description="DevX 2.0 Orchestrator",
         epilog=(
             "Optional stacks:\n"
-            "  Toolchains: java node dotnet\n"
+            "  Toolchains: java dotnet\n"
             "  Services:   postgres chroma\n\n"
             "Multi-instance options:\n"
             "  -i, --instance   Compose project name (default: devx)\n"
@@ -521,11 +519,10 @@ def main():
             "  --postgres-port  Host port for postgres (default: 5432)\n\n"
             "Examples:\n"
             "  ./devx up\n"
-            "  ./devx up node\n"
             "  ./devx up postgres chroma\n"
-            "  ./devx up node postgres\n"
-            "  ./devx up -i devx2 -p 2223 node chroma\n"
-            "  ./devx up -i devx2 -p 2223 --postgres-port 5433 node postgres\n"
+            "  ./devx up java postgres\n"
+            "  ./devx up -i devx2 -p 2223 java chroma\n"
+            "  ./devx up -i devx2 -p 2223 --postgres-port 5433 java postgres\n"
             "  ./devx stacks"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -556,7 +553,7 @@ def main():
     up_parser.add_argument(
         "stacks",
         nargs="*",
-        help="Optional stack names to include, e.g. node postgres chroma",
+        help="Optional stack names to include, e.g. java postgres chroma",
     )
 
     # Down command

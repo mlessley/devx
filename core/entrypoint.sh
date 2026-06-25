@@ -12,6 +12,17 @@ if [ ! -f /devx/.bashrc ]; then
     cp /etc/skel/.bash_logout /devx/.bash_logout
 fi
 
+# Seed Claude Code defaults once for new home volumes
+if [ ! -f /devx/.clauderc ]; then
+    cat << 'EOF' > /devx/.clauderc
+{
+  "sandbox": true,
+  "allowUnsandboxedCommands": false,
+  "theme": "dark"
+}
+EOF
+fi
+
 # Inject a high-performance, informative prompt
 if ! grep -q "DevX 2.0 Prompt Configuration" /devx/.bashrc; then
     cat << 'EOF' >> /devx/.bashrc
