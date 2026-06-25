@@ -440,10 +440,14 @@ def interactive_select():
             {
                 "type": "checkbox",
                 "name": "services",
-                "message": "Select supporting services (run as separate containers):",
+                "message": "Select service overlays (run as separate containers):",
                 "choices": [
                     {"name": "PostgreSQL database", "value": "postgres"},
                     {"name": "Chroma vector database", "value": "chroma"},
+                    {
+                        "name": "ZTP services (Temporal + Nautobot 2.x + Redis + PostgreSQL)",
+                        "value": "ztp",
+                    },
                 ],
             },
         ]
@@ -473,8 +477,8 @@ def interactive_select():
                 selected_toolchains.append(tc)
 
         # Services
-        print("\nSelect supporting services (these run as separate containers):")
-        services = ["postgres", "chroma"]
+        print("\nSelect service overlays (these run as separate containers):")
+        services = ["postgres", "chroma", "ztp"]
         selected_services = []
         for svc in services:
             response = input(f"Include {svc}? (y/n): ").strip().lower()
@@ -493,11 +497,12 @@ def print_stack_help():
     """Print available optional stacks and usage examples."""
     print("Available optional stacks:")
     print("  Toolchains (inside sandbox): java, dotnet")
-    print("  Services (sidecars): postgres, chroma")
+    print("  Service overlays: postgres, chroma, ztp")
     print("")
     print("Examples:")
     print("  ./devx up")
     print("  ./devx up postgres chroma")
+    print("  ./devx up ztp")
     print("  ./devx up java postgres")
     print("  ./devx up -i devx2 -p 2223 java chroma")
     print("  ./devx up -i devx2 -p 2223 --postgres-port 5433 java postgres")
@@ -511,7 +516,7 @@ def main():
         epilog=(
             "Optional stacks:\n"
             "  Toolchains: java dotnet\n"
-            "  Services:   postgres chroma\n\n"
+            "  Service overlays: postgres chroma ztp\n\n"
             "Multi-instance options:\n"
             "  -i, --instance   Compose project name (default: devx)\n"
             "  -p, --ssh-port   Host SSH port for sandbox (default: 2222)\n\n"
@@ -520,6 +525,7 @@ def main():
             "Examples:\n"
             "  ./devx up\n"
             "  ./devx up postgres chroma\n"
+            "  ./devx up ztp\n"
             "  ./devx up java postgres\n"
             "  ./devx up -i devx2 -p 2223 java chroma\n"
             "  ./devx up -i devx2 -p 2223 --postgres-port 5433 java postgres\n"
@@ -553,7 +559,7 @@ def main():
     up_parser.add_argument(
         "stacks",
         nargs="*",
-        help="Optional stack names to include, e.g. java postgres chroma",
+        help="Optional stack names to include, e.g. java postgres chroma ztp",
     )
 
     # Down command

@@ -1,0 +1,105 @@
+services:
+  sandbox:
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CLI_ADDRESS=temporal:7233
+
+  temporal:
+    image: temporalio/auto-setup:latest
+    depends_on:
+      - temporal-postgres
+    ports:
+      - "127.0.0.1:${DEVX_TEMPORAL_GRPC_PORT:-7233}:7233"
+    environment:
+      DB: postgres12
+      DB_PORT: "5432"
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-postgres
+      DYNAMIC_CONFIG_FILE_PATH: /etc/temporal/config/dynamicconfig/development-sql.yaml
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CLI_ADDRESS: temporal:7233
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_SERVICE_NAME: temporal
+    volumes:
+      - ./temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
+    labels:
+      devx.metrics.scrape: "false"
+    restart: unless-stopped
+
+  temporal-ui:
+    image: temporalio/ui:latest
+    depends_on:
+      - temporal
+    ports:
+      - "127.0.0.1:${DEVX_TEMPORAL_UI_PORT:-8233}:8080"
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_SERVICE_NAME: temporal-ui
+    labels:
+      devx.metrics.scrape: "false"
+    restart: unless-stopped
+
+  temporal-postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: temporal
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+    volumes:
+      - temporal_postgres_data:/var/lib/postgresql/data
+    labels:
+      devx.metrics.scrape: "false"
+    restart: unless-stopped
+
+  ztp-postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: nautobot
+      POSTGRES_USER: nautobot
+      POSTGRES_PASSWORD: nautobot
+    volumes:
+      - ztp_postgres_data:/var/lib/postgresql/data
+    labels:
+      devx.metrics.scrape: "false"
+    restart: unless-stopped
+
+  ztp-redis:
+    image: redis:7-alpine
+    labels:
+      devx.metrics.scrape: "false"
+    restart: unless-stopped
+
+  nautobot:
+    image: networktocode/nautobot:2.4.21
+    ports:
+      - "127.0.0.1:${DEVX_NAUTOBOT_PORT:-8889}:8080"
+    environment:
+      NAUTOBOT_DB_ENGINE: django.db.backends.postgresql
+      NAUTOBOT_DB_NAME: nautobot
+      NAUTOBOT_DB_USER: nautobot
+      NAUTOBOT_DB_PASSWORD: nautobot
+      NAUTOBOT_DB_HOST: ztp-postgres
+      NAUTOBOT_REDIS_HOST: ztp-redis
+      NAUTOBOT_ALLOWED_HOSTS: "*"
+      NAUTOBOT_SECRET_KEY: dev-secret-key-change-in-prod
+      NAUTOBOT_CREATE_SUPERUSER: "true"
+      NAUTOBOT_SUPERUSER_NAME: admin
+      NAUTOBOT_SUPERUSER_PASSWORD: admin
+      NAUTOBOT_SUPERUSER_API_TOKEN: admin-token
+      NAUTOBOT_METRICS_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_SERVICE_NAME: nautobot
+    depends_on:
+      - ztp-postgres
+      - ztp-redis
+    labels:
+      devx.metrics.scrape: "true"
+      devx.metrics.port: "8080"
+      devx.metrics.path: "/metrics"
+    restart: unless-stopped
+
+volumes:
+  temporal_postgres_data:
+  ztp_postgres_data:
