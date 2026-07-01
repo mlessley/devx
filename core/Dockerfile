@@ -30,6 +30,20 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && npm install -g yarn pnpm @anthropic-ai/claude-code \
     && rm -rf /var/lib/apt/lists/*
 
+# 4b. Install Docker CLI (daemonless; talks to host via /var/run/docker.sock)
+ARG DOCKER_CLI_VERSION=27.5.1
+RUN set -eux; \
+        arch="$(dpkg --print-architecture)"; \
+        case "$arch" in \
+            amd64) docker_arch='x86_64' ;; \
+            arm64) docker_arch='aarch64' ;; \
+            *) echo "Unsupported architecture for Docker CLI: $arch"; exit 1 ;; \
+        esac; \
+        curl -fsSL "https://download.docker.com/linux/static/stable/${docker_arch}/docker-${DOCKER_CLI_VERSION}.tgz" -o /tmp/docker.tgz; \
+        tar -xzf /tmp/docker.tgz -C /tmp; \
+        install -m 0755 /tmp/docker/docker /usr/local/bin/docker; \
+        rm -rf /tmp/docker /tmp/docker.tgz
+
 # 5. Install Python Runtimes via uv
 RUN uv python install 3.11 3.12
 

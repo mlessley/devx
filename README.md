@@ -48,6 +48,23 @@ DevX currently provides:
 - **Connect**: `ssh devx` (or use VS Code Remote-SSH to connect to the `devx` host).
 - **Run Claude Code**: `claude` (one-time OAuth login persists because `/devx` is a named volume).
 
+### Running Docker from inside DevX
+DevX supports Docker-outside-of-Docker so projects inside the sandbox can use the host Docker daemon.
+
+- The sandbox mounts `/var/run/docker.sock`.
+- The image includes the Docker CLI binary.
+- On startup, DevX maps the socket's GID to a group and adds `devx` to that group automatically.
+
+Verify inside the sandbox:
+
+```bash
+ls -la /var/run/docker.sock
+docker version
+docker ps
+```
+
+Security note: mounting the Docker socket gives the container root-equivalent control over the host Docker daemon. Only use this with trusted code and trusted users.
+
 ### Optional stacks
 DevX supports optional compose overlays so toolchains and service overlays can be added when needed for a particular repo or experiment.
 
