@@ -23,6 +23,23 @@ if [ ! -f /devx/.clauderc ]; then
 EOF
 fi
 
+# If the host Docker socket is mounted, map its group/GID so 'devx' can use it.
+if [ -S /var/run/docker.sock ]; then
+    SOCKET_GID="$(stat -c '%g' /var/run/docker.sock)"
+    SOCKET_GROUP="$(getent group "${SOCKET_GID}" | cut -d: -f1 || true)"
+
+    if [ -n "${SOCKET_GROUP}" ]; then
+        usermod -aG "${SOCKET_GROUP}" devx || true
+    else
+        if getent group docker >/dev/null 2>&1; then
+            groupmod -g "${SOCKET_GID}" docker 2>/dev/null || true
+        else
+            groupadd -g "${SOCKET_GID}" docker 2>/dev/null || true
+        fi
+        usermod -aG docker devx || true
+    fi
+fi
+
 # Inject a high-performance, informative prompt
 if ! grep -q "DevX 2.0 Prompt Configuration" /devx/.bashrc; then
     cat << 'EOF' >> /devx/.bashrc

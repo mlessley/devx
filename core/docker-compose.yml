@@ -7,6 +7,8 @@ services:
     hostname: devx
     volumes:
       - devx_workspace:/devx
+      # Docker-outside-of-Docker: use host daemon from inside the sandbox.
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "127.0.0.1:${DEVX_SSH_PORT:-2222}:22"
     restart: unless-stopped
