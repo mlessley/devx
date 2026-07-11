@@ -12,16 +12,37 @@ ENV UV_PYTHON_INSTALL_DIR=/opt/python
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DISABLE_AUTOUPDATER=true
+ENV GH_CLI_KEYRING=/usr/share/keyrings/githubcli-archive-keyring.gpg
 
 # 3. Install System Dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssh-server \
+    bat \
     git \
     curl \
     sudo \
     ca-certificates \
+    dnsutils \
+    fd-find \
+    file \
+    fzf \
+    iproute2 \
+    iputils-ping \
+    jq \
+    lsof \
+    make \
+    netcat-openbsd \
+    procps \
     ripgrep \
+    rsync \
+    telnet \
+    tmux \
+    tree \
+    awscli \
+    less \
+    unzip \
     vim \
+    zip \
     && rm -rf /var/lib/apt/lists/*
 
 # 4. Install Node.js 22 LTS + JS package managers + Claude Code
@@ -29,6 +50,30 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && npm install -g yarn pnpm @anthropic-ai/claude-code \
     && rm -rf /var/lib/apt/lists/*
+
+# 4a. Install GitHub CLI (gh)
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+            | tee "$GH_CLI_KEYRING" > /dev/null \
+        && chmod go+r "$GH_CLI_KEYRING" \
+        && echo "deb [arch=$(dpkg --print-architecture) signed-by=$GH_CLI_KEYRING] https://cli.github.com/packages stable main" \
+            | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+        && apt-get update \
+        && apt-get install -y --no-install-recommends gh \
+        && rm -rf /var/lib/apt/lists/*
+
+# 4ab. Install Terraform CLI
+ARG TERRAFORM_VERSION=1.9.8
+RUN set -eux; \
+        arch="$(dpkg --print-architecture)"; \
+        case "$arch" in \
+            amd64) tf_arch='amd64' ;; \
+            arm64) tf_arch='arm64' ;; \
+            *) echo "Unsupported architecture for Terraform: $arch"; exit 1 ;; \
+        esac; \
+        curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${tf_arch}.zip" -o /tmp/terraform.zip; \
+        unzip /tmp/terraform.zip -d /tmp; \
+        install -m 0755 /tmp/terraform /usr/local/bin/terraform; \
+        rm -f /tmp/terraform /tmp/terraform.zip
 
 # 4b. Install Docker CLI (daemonless; talks to host via /var/run/docker.sock)
 ARG DOCKER_CLI_VERSION=27.5.1
