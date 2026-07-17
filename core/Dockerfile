@@ -77,6 +77,7 @@ RUN set -eux; \
 
 # 4b. Install Docker CLI (daemonless; talks to host via /var/run/docker.sock)
 ARG DOCKER_CLI_VERSION=27.5.1
+ARG DOCKER_COMPOSE_VERSION=2.33.1
 RUN set -eux; \
         arch="$(dpkg --print-architecture)"; \
         case "$arch" in \
@@ -87,6 +88,9 @@ RUN set -eux; \
         curl -fsSL "https://download.docker.com/linux/static/stable/${docker_arch}/docker-${DOCKER_CLI_VERSION}.tgz" -o /tmp/docker.tgz; \
         tar -xzf /tmp/docker.tgz -C /tmp; \
         install -m 0755 /tmp/docker/docker /usr/local/bin/docker; \
+    mkdir -p /usr/local/lib/docker/cli-plugins; \
+    curl -fsSL "https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-${docker_arch}" -o /usr/local/lib/docker/cli-plugins/docker-compose; \
+    chmod 0755 /usr/local/lib/docker/cli-plugins/docker-compose; \
         rm -rf /tmp/docker /tmp/docker.tgz
 
 # 5. Install Python Runtimes via uv

@@ -52,7 +52,7 @@ DevX currently provides:
 DevX supports Docker-outside-of-Docker so projects inside the sandbox can use the host Docker daemon.
 
 - The sandbox mounts `/var/run/docker.sock`.
-- The image includes the Docker CLI binary.
+- The image includes the Docker CLI binary and Docker Compose plugin.
 - On startup, DevX maps the socket's GID to a group and adds `devx` to that group automatically.
 
 Verify inside the sandbox:
@@ -60,6 +60,7 @@ Verify inside the sandbox:
 ```bash
 ls -la /var/run/docker.sock
 docker version
+docker compose version
 docker ps
 ```
 
