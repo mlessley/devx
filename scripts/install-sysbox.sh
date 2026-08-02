@@ -53,7 +53,7 @@ if [ -n "$existing" ]; then
     echo ""
     echo "The sysbox installer requires removing ALL existing Docker containers"
     echo "(running and stopped) on this host. The following will be removed:"
-    docker ps -a --format '  %s (%s)' 2>/dev/null || docker ps -a
+    docker ps -a --format '  {{.Names}} ({{.Image}})'
     if [ "${ASSUME_YES:-}" != "1" ]; then
         read -r -p "Continue and remove them? [y/N] " reply
         case "$reply" in
@@ -61,14 +61,15 @@ if [ -n "$existing" ]; then
             *) echo "Aborted. Set ASSUME_YES=1 to skip this prompt."; exit 1 ;;
         esac
     fi
-    docker rm -f $existing
+    mapfile -t existing_ids <<< "$existing"
+    docker rm -f "${existing_ids[@]}"
 fi
 
 echo "Installing sysbox-ce..."
 sudo apt-get install -y "$tmp_deb"
 
 echo "Verifying sysbox service..."
-systemctl status sysbox --no-pager -n 20
+systemctl status sysbox --no-pager -n 20 || true
 
 echo "Verifying Docker registered the sysbox-runc runtime..."
 if docker info --format '{{json .Runtimes}}' | grep -q sysbox-runc; then
