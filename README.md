@@ -31,6 +31,7 @@ DevX currently provides:
 ### Prerequisites
 - **Windows**: WSL2 (Ubuntu) and Docker Desktop (or native Docker inside WSL2).
 - **macOS/Linux**: Docker and Python 3.
+- **All platforms**: the `sysbox-runc` container runtime installed on the Docker host — see [Running Docker from inside DevX](#running-docker-from-inside-devx).
 
 ### Installation
 1. Clone this repository to your host machine.
@@ -49,22 +50,31 @@ DevX currently provides:
 - **Run Claude Code**: `claude` (one-time OAuth login persists because `/devx` is a named volume).
 
 ### Running Docker from inside DevX
-DevX supports Docker-outside-of-Docker so projects inside the sandbox can use the host Docker daemon.
+DevX runs its own isolated Docker Engine inside the sandbox (Docker-in-Docker), instead of mounting the host's Docker socket. Containers, images, and builds the agent creates stay inside the sandbox and cannot reach or control the host's Docker daemon.
 
-- The sandbox mounts `/var/run/docker.sock`.
-- The image includes the Docker CLI binary and Docker Compose plugin.
-- On startup, DevX maps the socket's GID to a group and adds `devx` to that group automatically.
+**One-time host setup:** the sandbox runs under the `sysbox-runc` runtime, which must be installed on the host once:
+
+```bash
+./scripts/install-sysbox.sh
+```
+
+See `docs/superpowers/specs/2026-07-30-devx-sandbox-hardening-design.md` for why this approach was chosen over mounting the host socket.
 
 Verify inside the sandbox:
 
 ```bash
-ls -la /var/run/docker.sock
 docker version
 docker compose version
-docker ps
+docker run --rm hello-world
 ```
 
-Security note: mounting the Docker socket gives the container root-equivalent control over the host Docker daemon. Only use this with trusted code and trusted users.
+**Reaching a container's published port from your host:** ports the agent publishes with `docker run -p` are only reachable from inside the sandbox's own network namespace, not automatically from Windows/macOS/Linux. Use an SSH tunnel:
+
+```bash
+ssh -L 8080:localhost:8080 devx
+```
+
+Then open `http://localhost:8080` normally. If you use VS Code Remote-SSH to connect to `devx`, it detects listening ports on the remote and offers to forward them automatically — no manual tunnel needed.
 
 ### Optional stacks
 DevX supports optional compose overlays so toolchains and service overlays can be added when needed for a particular repo or experiment.
