@@ -23,21 +23,23 @@ if [ ! -f /devx/.clauderc ]; then
 EOF
 fi
 
-# If the host Docker socket is mounted, map its group/GID so 'devx' can use it.
-if [ -S /var/run/docker.sock ]; then
-    SOCKET_GID="$(stat -c '%g' /var/run/docker.sock)"
-    SOCKET_GROUP="$(getent group "${SOCKET_GID}" | cut -d: -f1 || true)"
+# Start the nested Docker daemon. It's isolated from the host's Docker by the
+# sysbox-runc runtime this container runs under — see
+# docs/superpowers/specs/2026-07-30-devx-sandbox-hardening-design.md
+mkdir -p /var/log/devx
+dockerd >/var/log/devx/dockerd.log 2>&1 &
 
-    if [ -n "${SOCKET_GROUP}" ]; then
-        usermod -aG "${SOCKET_GROUP}" devx || true
-    else
-        if getent group docker >/dev/null 2>&1; then
-            groupmod -g "${SOCKET_GID}" docker 2>/dev/null || true
-        else
-            groupadd -g "${SOCKET_GID}" docker 2>/dev/null || true
-        fi
-        usermod -aG docker devx || true
+echo "Waiting for nested Docker daemon to be ready..."
+for i in $(seq 1 30); do
+    if docker info >/dev/null 2>&1; then
+        echo "Nested Docker daemon is ready."
+        break
     fi
+    sleep 1
+done
+
+if ! docker info >/dev/null 2>&1; then
+    echo "Warning: nested Docker daemon did not become ready in time. See /var/log/devx/dockerd.log." >&2
 fi
 
 # Inject a high-performance, informative prompt

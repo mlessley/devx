@@ -73,18 +73,50 @@ def setup_ssh_keys():
 def inject_ssh_key(pub_key, container_id):
     """Injects the public key into the running sandbox container for both root and devx users."""
     print("Injecting SSH public key into container...")
+    script = (
+        'set -e; '
+        'key="$(cat)"; '
+        'mkdir -p "$1/.ssh"; '
+        'touch "$1/.ssh/authorized_keys"; '
+        'grep -qF "$key" "$1/.ssh/authorized_keys" || echo "$key" >> "$1/.ssh/authorized_keys"; '
+        'chmod 600 "$1/.ssh/authorized_keys"; '
+        'chown -R "$2:$2" "$1/.ssh"'
+    )
     for user in ["root", "devx"]:
         home = "/root" if user == "root" else "/devx"
-        run_command(["docker", "exec", container_id, "mkdir", "-p", f"{home}/.ssh"])
-        # Use grep to check if key already exists before appending
-        cmd = f"grep -qF '{pub_key}' {home}/.ssh/authorized_keys || echo '{pub_key}' >> {home}/.ssh/authorized_keys && chmod 600 {home}/.ssh/authorized_keys && chown -R {user}:{user} {home}/.ssh"
-        run_command(["docker", "exec", container_id, "sh", "-c", cmd])
+        try:
+            subprocess.run(
+                ["docker", "exec", "-i", container_id, "sh", "-c", script, "_", home, user],
+                input=pub_key,
+                text=True,
+                check=True,
+                capture_output=True,
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"Error injecting SSH key for user {user}: {e.stderr}")
+            raise e
 
 
 def check_docker():
     """Ensure dockerd is running in WSL."""
     try:
         subprocess.run(["docker", "info"], check=True, capture_output=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("Error: Docker is not running in WSL. Please start dockerd.")
+        sys.exit(1)
+
+
+def check_sysbox_runtime():
+    """Ensure the sysbox-runc runtime is registered with Docker."""
+    try:
+        result = subprocess.run(
+            ["docker", "info", "--format", "{{json .Runtimes}}"],
+            check=True, capture_output=True, text=True,
+        )
+        if "sysbox-runc" not in result.stdout:
+            print("Error: the 'sysbox-runc' Docker runtime is not registered.")
+            print("Run './scripts/install-sysbox.sh' once on this host, then retry.")
+            sys.exit(1)
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("Error: Docker is not running in WSL. Please start dockerd.")
         sys.exit(1)
@@ -266,6 +298,7 @@ def update_windows_ssh_config(instance, ssh_port):
 def up(args):
     """Starts the DevX sandbox."""
     check_docker()
+    check_sysbox_runtime()
 
     # Get the directory of the current script to find core/
     script_dir = os.path.dirname(os.path.abspath(__file__))

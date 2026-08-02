@@ -5,10 +5,12 @@ services:
       dockerfile: Dockerfile
       target: devx
     hostname: devx
+    runtime: sysbox-runc
     volumes:
       - devx_workspace:/devx
-      # Docker-outside-of-Docker: use host daemon from inside the sandbox.
-      - /var/run/docker.sock:/var/run/docker.sock
+      # Nested Docker Engine data (images/containers the agent builds/runs),
+      # isolated from the host's Docker by the sysbox-runc runtime above.
+      - devx_docker_data:/var/lib/docker
     ports:
       - "127.0.0.1:${DEVX_SSH_PORT:-2222}:22"
     restart: unless-stopped
@@ -18,3 +20,4 @@ services:
 
 volumes:
   devx_workspace:
+  devx_docker_data:
