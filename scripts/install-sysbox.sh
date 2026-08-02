@@ -79,5 +79,23 @@ else
     exit 1
 fi
 
+# Known incompatibility: sysbox-runc 0.7.0 does not support the "time"
+# namespace that newer Docker/containerd request by default, causing
+# `OCI runtime create failed: namespace {"time" ""} does not exist` on any
+# sysbox-runc container. See https://github.com/nestybox/sysbox/issues/1011
+# and https://github.com/nestybox/sysbox/issues/1017. Disabling the
+# time-namespaces feature in Docker's daemon.json is a community-reported
+# workaround; apply it if not already present.
+daemon_json="/etc/docker/daemon.json"
+if [ -f "$daemon_json" ] && ! jq -e '.features["time-namespaces"] == false' "$daemon_json" >/dev/null 2>&1; then
+    echo "Applying time-namespaces workaround to ${daemon_json}..."
+    sudo cp "$daemon_json" "${daemon_json}.bak.$(date +%s)"
+    jq '. + {"features": (.features // {} | . + {"time-namespaces": false})}' "$daemon_json" \
+        | sudo tee "${daemon_json}.new" > /dev/null
+    sudo mv "${daemon_json}.new" "$daemon_json"
+    sudo systemctl restart docker
+    echo "Docker restarted with time-namespaces disabled."
+fi
+
 rm -f "$tmp_deb"
 echo "Sysbox installation complete."
