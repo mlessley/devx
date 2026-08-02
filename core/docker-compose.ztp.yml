@@ -14,7 +14,7 @@ services:
       DB: postgres12
       DB_PORT: "5432"
       POSTGRES_USER: temporal
-      POSTGRES_PWD: temporal
+      POSTGRES_PWD: ${DEVX_TEMPORAL_DB_PASSWORD:-temporal}
       POSTGRES_SEEDS: temporal-postgres
       DYNAMIC_CONFIG_FILE_PATH: /etc/temporal/config/dynamicconfig/development-sql.yaml
       TEMPORAL_ADDRESS: temporal:7233
@@ -46,7 +46,7 @@ services:
     environment:
       POSTGRES_DB: temporal
       POSTGRES_USER: temporal
-      POSTGRES_PASSWORD: temporal
+      POSTGRES_PASSWORD: ${DEVX_TEMPORAL_DB_PASSWORD:-temporal}
     volumes:
       - temporal_postgres_data:/var/lib/postgresql/data
     labels:
@@ -58,7 +58,7 @@ services:
     environment:
       POSTGRES_DB: nautobot
       POSTGRES_USER: nautobot
-      POSTGRES_PASSWORD: nautobot
+      POSTGRES_PASSWORD: ${DEVX_NAUTOBOT_DB_PASSWORD:-nautobot}
     volumes:
       - ztp_postgres_data:/var/lib/postgresql/data
     labels:
@@ -79,15 +79,15 @@ services:
       NAUTOBOT_DB_ENGINE: django.db.backends.postgresql
       NAUTOBOT_DB_NAME: nautobot
       NAUTOBOT_DB_USER: nautobot
-      NAUTOBOT_DB_PASSWORD: nautobot
+      NAUTOBOT_DB_PASSWORD: ${DEVX_NAUTOBOT_DB_PASSWORD:-nautobot}
       NAUTOBOT_DB_HOST: ztp-postgres
       NAUTOBOT_REDIS_HOST: ztp-redis
-      NAUTOBOT_ALLOWED_HOSTS: "*"
-      NAUTOBOT_SECRET_KEY: dev-secret-key-change-in-prod
+      NAUTOBOT_ALLOWED_HOSTS: "127.0.0.1,localhost,nautobot"
+      NAUTOBOT_SECRET_KEY: ${DEVX_NAUTOBOT_SECRET_KEY:-dev-secret-key-change-in-prod}
       NAUTOBOT_CREATE_SUPERUSER: "true"
       NAUTOBOT_SUPERUSER_NAME: admin
-      NAUTOBOT_SUPERUSER_PASSWORD: admin
-      NAUTOBOT_SUPERUSER_API_TOKEN: admin-token
+      NAUTOBOT_SUPERUSER_PASSWORD: ${DEVX_NAUTOBOT_SUPERUSER_PASSWORD:-admin}
+      NAUTOBOT_SUPERUSER_API_TOKEN: ${DEVX_NAUTOBOT_SUPERUSER_API_TOKEN:-admin-token}
       NAUTOBOT_METRICS_ENABLED: "true"
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       OTEL_SERVICE_NAME: nautobot
