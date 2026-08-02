@@ -125,10 +125,10 @@ RUN if [ "$INSTALL_DOTNET" = "true" ]; then \
 # Instead, projects inside /devx/repos will use 'uv' to manage their own dependencies.
 # This keeps our base image lean and our projects isolated.
 
-# 7. Configure SSH (Key-auth + Password fallback)
+# 7. Configure SSH (key-auth only)
 RUN mkdir -p /var/run/sshd \
-    && sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config \
-    && sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+    && sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config \
+    && sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
 
 # 8. Create devx user with home at /devx
 RUN useradd -d /devx -s /bin/bash devx \
