@@ -12,6 +12,7 @@
 
 - Sysbox version pinned: `0.7.0` (verified current release, assets `sysbox-ce_0.7.0.linux_{amd64,arm64}.deb` at `https://github.com/nestybox/sysbox/releases/download/v0.7.0/`).
 - Host verified compatible: WSL2 Ubuntu 24.04.4, kernel `6.6.87.2-microsoft-standard-WSL2` (exceeds sysbox's kernel ≥6.3 threshold, so no shiftfs needed), Docker Engine `29.6.1` installed natively via `docker-ce` apt package (not snap), systemd is PID 1.
+- **Known incompatibility, confirmed live during the Task 2 spike**: sysbox-runc 0.7.0 fails to create any container with `OCI runtime create failed: namespace {"time" ""} does not exist` against Docker 29.6.1 / containerd 2.2.5, because sysbox-runc doesn't yet support the `time` namespace newer Docker/containerd request by default ([nestybox/sysbox#1011](https://github.com/nestybox/sysbox/issues/1011), open/unresolved upstream). Workaround (community-reported for the adjacent Docker 29.5.x, confirmed working here on 29.6.1): add `"features": {"time-namespaces": false}` to `/etc/docker/daemon.json` and restart Docker ([nestybox/sysbox#1017](https://github.com/nestybox/sysbox/issues/1017)). `scripts/install-sysbox.sh` now applies this automatically.
 - No `--privileged`, ever, on the sandbox service.
 - No manual `cap_drop`/`security-opt`/seccomp overrides on the sandbox service — sysbox manages isolation itself; hand-rolled capability restrictions risk breaking nested Docker.
 - `devx`'s `NOPASSWD:ALL` sudo is retained intentionally (see spec's Rationale section) — do not remove it as part of this work.
