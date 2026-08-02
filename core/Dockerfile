@@ -132,8 +132,6 @@ RUN mkdir -p /var/run/sshd \
 
 # 8. Create devx user with home at /devx
 RUN useradd -d /devx -s /bin/bash devx \
-    && echo "root:devx" | chpasswd \
-    && echo "devx:devx" | chpasswd \
     && usermod -aG sudo devx \
     && echo "devx ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
     && groupadd -f docker \

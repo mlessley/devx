@@ -31,7 +31,7 @@ DevX currently provides:
 ### Prerequisites
 - **Windows**: WSL2 (Ubuntu) and Docker Desktop (or native Docker inside WSL2).
 - **macOS/Linux**: Docker and Python 3.
-- **All platforms**: the `sysbox-runc` container runtime installed on the Docker host — see [Running Docker from inside DevX](#running-docker-from-inside-devx).
+- **Linux hosts (native Linux, or WSL2 on Windows)**: the `sysbox-runc` container runtime installed on the Docker host — see [Running Docker from inside DevX](#running-docker-from-inside-devx).
 
 ### Installation
 1. Clone this repository to your host machine.
@@ -57,6 +57,8 @@ DevX runs its own isolated Docker Engine inside the sandbox (Docker-in-Docker), 
 ```bash
 ./scripts/install-sysbox.sh
 ```
+
+**Warning:** this one-time step will prompt to remove ALL existing Docker containers on the host (running and stopped) — this is a requirement of the sysbox installer itself, not something specific to DevX. Container data stored in named volumes is unaffected.
 
 See `docs/superpowers/specs/2026-07-30-devx-sandbox-hardening-design.md` for why this approach was chosen over mounting the host socket.
 

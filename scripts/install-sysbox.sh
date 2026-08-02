@@ -87,7 +87,13 @@ fi
 # time-namespaces feature in Docker's daemon.json is a community-reported
 # workaround; apply it if not already present.
 daemon_json="/etc/docker/daemon.json"
-if [ -f "$daemon_json" ] && ! jq -e '.features["time-namespaces"] == false' "$daemon_json" >/dev/null 2>&1; then
+sudo mkdir -p /etc/docker
+if [ ! -f "$daemon_json" ]; then
+    echo "Creating ${daemon_json} with time-namespaces workaround..."
+    echo '{"features": {"time-namespaces": false}}' | sudo tee "$daemon_json" > /dev/null
+    sudo systemctl restart docker
+    echo "Docker restarted with time-namespaces disabled."
+elif ! jq -e '.features["time-namespaces"] == false' "$daemon_json" >/dev/null 2>&1; then
     echo "Applying time-namespaces workaround to ${daemon_json}..."
     sudo cp "$daemon_json" "${daemon_json}.bak.$(date +%s)"
     jq '. + {"features": (.features // {} | . + {"time-namespaces": false})}' "$daemon_json" \

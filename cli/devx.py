@@ -84,19 +84,39 @@ def inject_ssh_key(pub_key, container_id):
     )
     for user in ["root", "devx"]:
         home = "/root" if user == "root" else "/devx"
-        subprocess.run(
-            ["docker", "exec", "-i", container_id, "sh", "-c", script, "_", home, user],
-            input=pub_key,
-            text=True,
-            check=True,
-            capture_output=True,
-        )
+        try:
+            subprocess.run(
+                ["docker", "exec", "-i", container_id, "sh", "-c", script, "_", home, user],
+                input=pub_key,
+                text=True,
+                check=True,
+                capture_output=True,
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"Error injecting SSH key for user {user}: {e.stderr}")
+            raise e
 
 
 def check_docker():
     """Ensure dockerd is running in WSL."""
     try:
         subprocess.run(["docker", "info"], check=True, capture_output=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("Error: Docker is not running in WSL. Please start dockerd.")
+        sys.exit(1)
+
+
+def check_sysbox_runtime():
+    """Ensure the sysbox-runc runtime is registered with Docker."""
+    try:
+        result = subprocess.run(
+            ["docker", "info", "--format", "{{json .Runtimes}}"],
+            check=True, capture_output=True, text=True,
+        )
+        if "sysbox-runc" not in result.stdout:
+            print("Error: the 'sysbox-runc' Docker runtime is not registered.")
+            print("Run './scripts/install-sysbox.sh' once on this host, then retry.")
+            sys.exit(1)
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("Error: Docker is not running in WSL. Please start dockerd.")
         sys.exit(1)
@@ -278,6 +298,7 @@ def update_windows_ssh_config(instance, ssh_port):
 def up(args):
     """Starts the DevX sandbox."""
     check_docker()
+    check_sysbox_runtime()
 
     # Get the directory of the current script to find core/
     script_dir = os.path.dirname(os.path.abspath(__file__))
