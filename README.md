@@ -98,7 +98,7 @@ Pass stack names directly:
   ```bash
   ./devx up postgres
   ```
-- Start sandbox + Java 11 runtime only:
+- Start sandbox + Java 25 runtime only:
   ```bash
   ./devx up java
   ```

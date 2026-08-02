@@ -466,7 +466,7 @@ def interactive_select():
                 "name": "toolchains",
                 "message": "Select sandbox toolchains (add languages/runtimes to your dev container):",
                 "choices": [
-                    {"name": "Java (OpenJDK 11 + Maven/Gradle)", "value": "java"},
+                    {"name": "Java (OpenJDK 25 + Maven/Gradle)", "value": "java"},
                     {"name": ".NET (SDK 8.0)", "value": "dotnet"},
                 ],
             },

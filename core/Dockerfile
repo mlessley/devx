@@ -106,7 +106,7 @@ ARG INSTALL_DOTNET=false
 # Install Java if requested
 RUN if [ "$INSTALL_JAVA" = "true" ]; then \
     apt-get update && apt-get install -y --no-install-recommends \
-    openjdk-11-jdk \
+    openjdk-25-jdk \
     maven \
     gradle \
     && rm -rf /var/lib/apt/lists/*; \
