@@ -75,19 +75,22 @@ RUN set -eux; \
         install -m 0755 /tmp/terraform /usr/local/bin/terraform; \
         rm -f /tmp/terraform /tmp/terraform.zip
 
-# 4b. Install Docker CLI (daemonless; talks to host via /var/run/docker.sock)
+# 4b. Install Docker Engine (dockerd + CLI; runs a nested daemon isolated by
+# the sysbox-runc runtime — see docs/superpowers/specs/2026-07-30-devx-sandbox-hardening-design.md)
 ARG DOCKER_CLI_VERSION=27.5.1
 ARG DOCKER_COMPOSE_VERSION=2.33.1
+RUN apt-get update && apt-get install -y --no-install-recommends iptables \
+    && rm -rf /var/lib/apt/lists/*
 RUN set -eux; \
         arch="$(dpkg --print-architecture)"; \
         case "$arch" in \
             amd64) docker_arch='x86_64' ;; \
             arm64) docker_arch='aarch64' ;; \
-            *) echo "Unsupported architecture for Docker CLI: $arch"; exit 1 ;; \
+            *) echo "Unsupported architecture for Docker Engine: $arch"; exit 1 ;; \
         esac; \
         curl -fsSL "https://download.docker.com/linux/static/stable/${docker_arch}/docker-${DOCKER_CLI_VERSION}.tgz" -o /tmp/docker.tgz; \
         tar -xzf /tmp/docker.tgz -C /tmp; \
-        install -m 0755 /tmp/docker/docker /usr/local/bin/docker; \
+        install -m 0755 /tmp/docker/* /usr/local/bin/; \
     mkdir -p /usr/local/lib/docker/cli-plugins; \
     curl -fsSL "https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-${docker_arch}" -o /usr/local/lib/docker/cli-plugins/docker-compose; \
     chmod 0755 /usr/local/lib/docker/cli-plugins/docker-compose; \
@@ -133,6 +136,8 @@ RUN useradd -d /devx -s /bin/bash devx \
     && echo "devx:devx" | chpasswd \
     && usermod -aG sudo devx \
     && echo "devx ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
+    && groupadd -f docker \
+    && usermod -aG docker devx \
     && git config --global init.defaultBranch main
 
 # 9. Install Orchestration Tools
